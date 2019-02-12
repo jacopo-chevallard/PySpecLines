@@ -1,14 +1,11 @@
 #! /usr/bin/env python
 
-import argparse
-import os
 from collections import OrderedDict
 import json
 from astropy.io import fits
 import numpy as np
 import pyspeckit
 import matplotlib.pyplot as plt
-from astropy import log
 
 SEP = "_"
 FLUX_PREFIX = "F" + SEP
