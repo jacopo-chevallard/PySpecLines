@@ -104,13 +104,7 @@ def main():
     )
 
 
-    # Get parsed arguments
-    args = parser.parse_args()    
-
     log.setLevel('WARNING')
-
-    # Load the default command line argument parser
-    parser = standard_parser()
 
     # Add package version
     parser.add_argument('-v', '--version', 
