@@ -6,7 +6,6 @@ from collections import OrderedDict
 import json
 from astropy.io import fits
 import numpy as np
-from scipy.interpolate import interp1d
 import pyspeckit
 import matplotlib.pyplot as plt
 from astropy import log
