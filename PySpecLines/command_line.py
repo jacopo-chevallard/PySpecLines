@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-import sys
-import os
 import argparse
 import numpy as np
 from matplotlib import rc
-from astropy.io import fits
 from pathos.multiprocessing import ProcessingPool 
+from astropy import log
 
 from _version import __version__
 from pyspeclines import *
