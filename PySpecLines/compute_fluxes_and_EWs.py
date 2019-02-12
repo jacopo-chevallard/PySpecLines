@@ -10,7 +10,6 @@ import pyspeckit
 import matplotlib.pyplot as plt
 from astropy import log
 
-
 SEP = "_"
 FLUX_PREFIX = "F" + SEP
 EW_PREFIX = "EW" + SEP
