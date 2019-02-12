@@ -1,6 +1,6 @@
 # PySpecLines
 
-Some useful scripts to compute integrated line fluxes and equivalent widths using 3 different methods:
+Some useful scripts to compute integrated line fluxes and equivalent widths from galaxy spectra using 3 different methods:
 
 - numerical (trapezoidal) integration
 - Gaussian fit using a "standard" Levenberg-Marquardt algorithm
