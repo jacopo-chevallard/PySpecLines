@@ -17,13 +17,19 @@ The script **requires** one or more input FITS files containing the calibrated s
 If the spectrum is provided in the observed frame, then you must provide a ``REDSHIFT`` keyword in the FITS header containing the object redshift.
 
 - Compute the fluxes and EWs using numerical integration
-  ``./get_integrated_fluxes.py --file my_spectrum.fits --json-file  emission_lines_EWs_config.json``
+  ```
+  ./get_integrated_fluxes.py --file my_spectrum.fits --json-file  emission_lines_EWs_config.json
+  ```
 
 - Compute the fluxes and EWs using Gaussian fit (Levenberg-Marquardt)
-  ``./get_integrated_fluxes.py --file my_spectrum.fits --json-file  emission_lines_EWs_config.json --gaussian-fit``
+  ```
+  ./get_integrated_fluxes.py --file my_spectrum.fits --json-file  emission_lines_EWs_config.json --gaussian-fit
+  ```
 
 - Compute the fluxes and EWs using Gaussian fit (MCMC)
-  ``./get_integrated_fluxes.py --file my_spectrum.fits --json-file  emission_lines_EWs_config.json --gaussian-fit --use-PyMC --MCMC-samples 5000``
+  ```
+  ./get_integrated_fluxes.py --file my_spectrum.fits --json-file  emission_lines_EWs_config.json --gaussian-fit --use-PyMC --MCMC-samples 5000
+  ```
 
 ## Requirements
 
