@@ -6,8 +6,24 @@ Some useful scripts to compute integrated line fluxes and equivalent widths from
 - Gaussian fit using a "standard" Levenberg-Marquardt algorithm
 - Gaussian fit using an MCMC algorithm
 
+## Installing the package
+
+To install ``PySpecLines`` you can use ``pip``, which will take catre of installing the required dependencies as well
+```
+pip install pyspeclines
+```
+
+To upgrade to the latest available version you can run
+```
+pip install pyspeclines --upgrade
+```
 
 ## Examples
+
+You can see the different available options running
+```
+pyspeclines --help
+```
 
 The script **requires** one or more input FITS files containing the calibrated spectra and the following columns:
 - ``wl``, wavelength array in ``ang``
@@ -18,22 +34,15 @@ If the spectrum is provided in the observed frame, then you must provide a ``RED
 
 - Compute the fluxes and EWs using numerical integration
   ```
-  ./get_integrated_fluxes.py --file my_spectrum.fits --json-file  emission_lines_EWs_config.json
+  pyspeclines --file my_spectrum.fits --json-file  emission_lines_EWs_config.json
   ```
 
 - Compute the fluxes and EWs using Gaussian fit (Levenberg-Marquardt)
   ```
-  ./get_integrated_fluxes.py --file my_spectrum.fits --json-file  emission_lines_EWs_config.json --gaussian-fit
+  pyspeclines --file my_spectrum.fits --json-file  emission_lines_EWs_config.json --gaussian-fit
   ```
 
 - Compute the fluxes and EWs using Gaussian fit (MCMC)
   ```
-  ./get_integrated_fluxes.py --file my_spectrum.fits --json-file  emission_lines_EWs_config.json --gaussian-fit --use-PyMC --MCMC-samples 5000
+  pyspeclines --file my_spectrum.fits --json-file  emission_lines_EWs_config.json --gaussian-fit --use-PyMC --MCMC-samples 5000
   ```
-
-## Requirements
-
-- numpy
-- astropy
-- matplotlib
-- pyspeckit
