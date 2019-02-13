@@ -41,12 +41,21 @@ def main():
     )
 
     parser.add_argument(
+        '--iterate-fit',
+        help="Number of iterations fit continuum - fit lines.",
+        action="store", 
+        type=int, 
+        default=3,
+        dest="n_iter"
+    )
+
+    parser.add_argument(
         '--extend-continuum-region',
         help="Number of pixels that will be added to the left and to the right of the continuum "\
                 "region to define the region of the continuum+Gaussian fit",
         action="store", 
         type=int, 
-        default=10,
+        default=0,
         dest="extend_region"
     )
 
@@ -60,10 +69,25 @@ def main():
     )
 
     parser.add_argument(
+        '--continuum-error',
+        help="Relative error of the continuum determination",
+        action="store", 
+        type=float, 
+        dest="continuum_error"
+    )
+
+    parser.add_argument(
         '--use-PyMC',
         help="Use PyMC to perform an MCMC exploration of the parameter space",
         action="store_true", 
         dest="use_pymc"
+    )
+
+    parser.add_argument(
+        '--log-flux',
+        help="Plot logarithmic y-axis scale",
+        action="store_true", 
+        dest="log_flux"
     )
 
     parser.add_argument(
