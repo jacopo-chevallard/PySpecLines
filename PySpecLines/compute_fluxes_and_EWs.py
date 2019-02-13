@@ -23,7 +23,6 @@ def get_multiple_keys(key):
 
     _key_sp = key.split(SEP)
     _key_sp.append(key)
-    print "_key_sp: ", _key_sp
 
     return _key_sp
 
@@ -304,7 +303,10 @@ def compute_fluxes_EWs(file_name, json_file, args):
             integrated_errors[key] = integrated_error
             EWs[key] = EW
             EWs_errors[key] = EW_err
-            plt.show()
+
+            if args.show_plot:
+                plt.show()
+
             fig_name = key + ".pdf"
             sp.plotter.savefig(fig_name)
 

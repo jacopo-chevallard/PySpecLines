@@ -91,6 +91,13 @@ def main():
     )
 
     parser.add_argument(
+        '--show-plot',
+        help="Show plot of each fitted line(s)",
+        action="store_true", 
+        dest="show_plot"
+    )
+
+    parser.add_argument(
         '--credible-intervals',
         help="Credible intervals to be used to compute the error on the fluxes",
         action="store", 
