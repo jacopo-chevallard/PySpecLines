@@ -3,6 +3,7 @@
 from collections import OrderedDict
 import json
 from astropy.io import fits
+from astropy import constants as const
 import numpy as np
 import pyspeckit
 import matplotlib.pyplot as plt
@@ -12,6 +13,33 @@ FLUX_PREFIX = "F" + SEP
 EW_PREFIX = "EW" + SEP
 ERR_SUFFIX = SEP + "err"
 
+def sum_errors_in_quadrature(errors):
+
+    _errors = np.array(errors)
+    _err = np.sqrt(np.sum(_errors**2))
+    return _err
+
+def get_multiple_keys(key):
+
+    _key_sp = key.split(SEP)
+    _key_sp.append(key)
+    print "_key_sp: ", _key_sp
+
+    return _key_sp
+
+def velocity_to_pixel(velocity, wl_central, dwl):
+
+    _dwl = velocity / const.c.to('km/s').value * wl_central
+
+    pxl = _dwl / dwl
+
+    return pxl
+
+def pixel_to_velocity(pxl, wl_central, dwl):
+
+    _dwl = pxl * dwl
+
+    velocity = _dwl / wl_central * const.c.to('km/s').value
 
 def compute_fluxes_EWs(file_name, json_file, args):
 
@@ -57,8 +85,13 @@ def compute_fluxes_EWs(file_name, json_file, args):
             ir1 = np.searchsorted(wl, value["continuum_right"][1]) ; ir1 = min([len(wl)+1, ir1+args.extend_region])
 
             _wl = wl[il0:ir1]
+            _dwl = _wl[1] - _wl[0]  
             _spectrum = spectrum[il0:ir1]
             _error = error[il0:ir1]
+
+            exclude = None
+            if "exclude" in value:
+                exclude = value["exclude"]
 
             # Main pyspeckit class that will enable you to do the analysis
             sp = pyspeckit.Spectrum(data=_spectrum, error=_error, xarr=_wl,
@@ -69,8 +102,8 @@ def compute_fluxes_EWs(file_name, json_file, args):
             # continuum, pyspeckit will try to fit the lines as well, so
             # the continuum will be biased high. This is why we will refit
             # the continuum (and the lines) later on.
-            sp.baseline(subtract=False, reset_selection=True, highlight_fitregion=False,
-                    order=args.continuum_degree, excludefit=False)
+            sp.baseline(subtract=False, highlight_fitregion=False,
+                    order=args.continuum_degree, excludefit=False, exclude=exclude)
 
             # Fit the lines using some input guesses for the amplitude,
             # width, and centroid of the line(s). As centroid(s) use the
@@ -78,35 +111,52 @@ def compute_fluxes_EWs(file_name, json_file, args):
             # togther the width of the lines, i.e. multiple lines share the
             # same line-width.
             amplitude_guess = np.mean(spectrum)
-            width_guess = 1.
-            guesses = list()
-            tied = list()
-            for component in value["wl_central"]:
+            _width_guess = 1.
+            guesses = list() ; tied = list()
+            width_velocity = None
+            for c, component in enumerate(value["wl_central"]):
                 center_guess = component
+                width_guess = _width_guess
+                if "width" in value:
+                    width_velocity = value["width"][c]
+                    width_guess = velocity_to_pixel(width_velocity, center_guess, _dwl)
+
                 guesses = guesses + [amplitude_guess, center_guess, width_guess]
 
-                # Only the first line has line-width as a free parameter
-                if len(tied) == 0:
+                # The first line has line-width as a free parameter
+                if c == 0:
                     tied = tied + ['', '', '']
-                # For the successive lines the width is fixed to the width of the first line
+                # For the successive lines the width can be fixed or variable
                 else:
-                    tied = tied + ['', '', 'p[2]']
+                    if width_velocity is None:
+                        tied = tied + ['', '', 'p[2]']
+                    else:
+                        width_velocities = list(value["width"][0:c])
+                        try:
+                            p = width_velocities.index(width_velocity)
+                            p = 2 + p * 3
+                            tied = tied + ['', '', 'p[2]']
+                        except:
+                            tied = tied + ['', '', '']
 
             # Fit the line(s) with a Gaussian function
             sp.specfit(fittype='gaussian', guesses=guesses, tied=tied)
 
-            # Fit again the continuum, this time *accounting* for the
-            # presence of the emission lines we just fitted. The continuum
-            # will not be biased high anymore.
-            sp.baseline(subtract=False, reset_selection=True, highlight_fitregion=False,
-                    order=args.continuum_degree, excludefit=True)
+            for N in range(args.n_iter):
+                # Fit again the continuum, this time *accounting* for the
+                # presence of the emission lines we just fitted. The continuum
+                # will not be biased high anymore.
+                sp.baseline(subtract=False, highlight_fitregion=False,
+                        order=args.continuum_degree, excludefit=True, exclude=exclude)
 
-            # Fit again the lines (using the re-computed continuum)
-            sp.specfit(fittype='gaussian', guesses=guesses, tied=tied)
+                # Fit again the lines (using the re-computed continuum)
+                sp.specfit(fittype='gaussian', guesses=guesses, tied=tied)
 
             sp.plotter(errstyle='fill')
             sp.specfit.plot_fit()
-            
+            if args.log_flux: 
+                plt.yscale('log')
+
             # Retrieve the fitted continuum
             continuum = sp.baseline.basespec
 
@@ -121,7 +171,7 @@ def compute_fluxes_EWs(file_name, json_file, args):
 
                 # Retrieve the parameters of the Gaussian fit and corresponding errors
                 amplitude, center, width = sp.specfit.parinfo.values[c0:c1]
-                amplitude_err, _, width_err = sp.specfit.parinfo.errors[c0:c1]
+                amplitude_err, center_err, width_err = sp.specfit.parinfo.errors[c0:c1]
 
                 # Compute the integrated flux (integral of a Gaussian)
                 _integrated_flux = np.sqrt(2*np.pi)*width*amplitude
@@ -141,8 +191,14 @@ def compute_fluxes_EWs(file_name, json_file, args):
                 EW.append(_EW)
                 _EW_err = _integrated_error
                 EW_err.append(_EW*_EW_err)
+
+                if args.continuum_error is not None:
+                    _continuum_error = args.continuum_error * _continuum
+                    integrated_error[c] = sum_errors_in_quadrature([integrated_error[c], _continuum_error])
+                    _continuum_error = args.continuum_error
+                    EW_err[c] = sum_errors_in_quadrature([EW_err[c], _continuum_error])
                 
-                print "Flux, error: ", integrated_flux[c], integrated_error[c]
+                print "Flux, error, line center, width: ", integrated_flux[c], integrated_error[c], center, pixel_to_velocity(width, center, _dwl)
                 print "EW, error: ", EW[c], EW_err[c]
 
             # Here we sum up the different components (useful to have also
@@ -171,7 +227,7 @@ def compute_fluxes_EWs(file_name, json_file, args):
 
                 # Sample the parameter space with adaptive Metropolis-Hastings
                 MC_uninformed.sample(args.n_samples, burn=burn, tune_interval=250)
-                
+
                 # Define quantiles that will be used to compute the
                 # posterior central credible region (= errors)
                 _perc = [0.5]
@@ -214,6 +270,12 @@ def compute_fluxes_EWs(file_name, json_file, args):
                     EW.append(_EW)
                     EW_err.append(0.5 * (err_up-err_low))
 
+                    if args.continuum_error is not None:
+                        _continuum_error = args.continuum_error * _continuum
+                        integrated_error[c] = sum_errors_in_quadrature([integrated_error[c], _continuum_error])
+                        _continuum_error = args.continuum_error
+                        EW_err[c] = sum_errors_in_quadrature([EW_err[c], _continuum_error])
+
                     print "Flux, error: ", integrated_flux[c], integrated_error[c]
                     print "EW, error: ", EW[c], EW_err[c]
 
@@ -243,6 +305,8 @@ def compute_fluxes_EWs(file_name, json_file, args):
             EWs[key] = EW
             EWs_errors[key] = EW_err
             plt.show()
+            fig_name = key + ".pdf"
+            sp.plotter.savefig(fig_name)
 
         else:
 
@@ -326,10 +390,7 @@ def compute_fluxes_EWs(file_name, json_file, args):
     for key, value in EWs.iteritems():
 
         if len(value) > 1:
-            _key_sp = key.split(SEP)
-            _key_sp = [_key_sp[0] + SEP + _key_sp[1], 
-                       _key_sp[0] + SEP + _key_sp[2],
-                       _key_sp[0] + SEP + _key_sp[1] + SEP + _key_sp[2]]
+            _key_sp = get_multiple_keys(key)
             for k in _key_sp:
                 _key = EW_PREFIX + k
                 col = fits.Column(name=_key, format='E')
@@ -354,10 +415,7 @@ def compute_fluxes_EWs(file_name, json_file, args):
 
     for key, value in EWs.iteritems():
         if len(value) > 1:
-            _key_sp = key.split(SEP)
-            _key_sp = [_key_sp[0] + SEP + _key_sp[1], 
-                       _key_sp[0] + SEP + _key_sp[2],
-                       _key_sp[0] + SEP + _key_sp[1] + SEP + _key_sp[2]]
+            _key_sp = get_multiple_keys(key)
             for c, k in enumerate(_key_sp):
                 _key = EW_PREFIX + k
                 new_hdu.data[_key] = EWs[key][c]
@@ -384,10 +442,7 @@ def compute_fluxes_EWs(file_name, json_file, args):
     for key, value in integrated_fluxes.iteritems():
 
         if len(value) > 1:
-            _key_sp = key.split(SEP)
-            _key_sp = [_key_sp[0] + SEP + _key_sp[1], 
-                       _key_sp[0] + SEP + _key_sp[2],
-                       _key_sp[0] + SEP + _key_sp[1] + SEP + _key_sp[2]]
+            _key_sp = get_multiple_keys(key)
             for k in _key_sp:
                 _key = FLUX_PREFIX + k
                 col = fits.Column(name=_key, format='E')
@@ -412,10 +467,7 @@ def compute_fluxes_EWs(file_name, json_file, args):
 
     for key, value in integrated_fluxes.iteritems():
         if len(value) > 1:
-            _key_sp = key.split(SEP)
-            _key_sp = [_key_sp[0] + SEP + _key_sp[1], 
-                       _key_sp[0] + SEP + _key_sp[2],
-                       _key_sp[0] + SEP + _key_sp[1] + SEP + _key_sp[2]]
+            _key_sp = get_multiple_keys(key)
             for c, k in enumerate(_key_sp):
                 _key = FLUX_PREFIX + k
                 new_hdu.data[_key] = integrated_fluxes[key][c]
