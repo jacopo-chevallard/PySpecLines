@@ -1,3 +1,6 @@
+## 0.1.6 (February 13, 2019)
+  - You're now correctly plotting the Gaussian fit obtained with PyMC, when PyMC is used (using the posterior median of the parameters)
+
 ## 0.1.5 (February 13, 2019)
   - Added example file for UV lines
   - Added option to show plot each time a line (or group of lines) are fitted
