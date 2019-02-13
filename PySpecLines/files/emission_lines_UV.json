@@ -1,0 +1,34 @@
+{
+
+    "CIV1548_CIV1551" : {
+        "wl_central": [1548.0, 1551.0],
+        "wl_range":[1546.0, 1553.0], 
+        "exclude":[1520.0, 1553.0], 
+        "continuum_left":[1510.0, 1546.0],
+        "continuum_right":[1553.0, 1570.0]
+    },
+
+    "HeII1640" : {
+        "wl_central": [1640.0],
+        "wl_range":[1638.0, 1643.0], 
+        "continuum_left":[1632.0, 1638.0],
+        "continuum_right":[1643.0, 1646.0]
+    },
+
+
+    "OIII1661_OIII1666" : {
+        "wl_central": [1661.0, 1666.0],
+        "wl_range":[1659.0, 1663.0], 
+        "exclude":[1557.0, 1672.0], 
+        "continuum_left":[1653.0, 1659.0],
+        "continuum_right":[1673.0, 1677.0]
+    },
+
+
+    "CIII_1908" : {
+        "wl_central": [1908.0],
+        "wl_range":[1903.0, 1912.0], 
+        "continuum_left":[1897.0, 1903.0],
+        "continuum_right":[1911.0, 1920.0]
+    }
+}
