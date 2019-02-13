@@ -152,7 +152,6 @@ def compute_fluxes_EWs(file_name, json_file, args):
                 sp.specfit(fittype='gaussian', guesses=guesses, tied=tied)
 
             sp.plotter(errstyle='fill')
-            sp.specfit.plot_fit()
             if args.log_flux: 
                 plt.yscale('log')
 
@@ -164,12 +163,14 @@ def compute_fluxes_EWs(file_name, json_file, args):
             print "##########################"
             integrated_flux = list() ; integrated_error =  list()
             EW = list() ; EW_err = list()
+            par_values = list()
 
             for c, component in enumerate(value["wl_central"]):
                 c0, c1 = c*3, (c+1)*3
 
                 # Retrieve the parameters of the Gaussian fit and corresponding errors
                 amplitude, center, width = sp.specfit.parinfo.values[c0:c1]
+                par_values.append(amplitude) ; par_values.append(center) ; par_values.append(width)
                 amplitude_err, center_err, width_err = sp.specfit.parinfo.errors[c0:c1]
 
                 # Compute the integrated flux (integral of a Gaussian)
@@ -242,11 +243,18 @@ def compute_fluxes_EWs(file_name, json_file, args):
                 integrated_flux = list() ; integrated_error =  list()
                 EW = list() ; EW_err = list()
                 areas = list() ; areas_continuum = list()
+                par_values = list()
 
                 for c, component in enumerate(value["wl_central"]):
 
                     # Retrieve the parameters of the Gaussian fit and compute area of the Gaussian (= integrated flux)
-                    _amplitude, _width = MC_uninformed.trace('AMPLITUDE'+str(c))[:], MC_uninformed.trace('WIDTH'+str(c))[:] 
+                    _amplitude = MC_uninformed.trace('AMPLITUDE'+str(c))[:]
+                    _center = MC_uninformed.trace('SHIFT'+str(c))[:]
+                    _width =MC_uninformed.trace('WIDTH'+str(c))[:] 
+
+                    amplitude, center, width = np.median(_amplitude), np.median(_center), np.median(_width) 
+                    par_values.append(amplitude) ; par_values.append(center) ; par_values.append(width)
+
                     _area = np.sqrt(2*np.pi)*_width*_amplitude
                     areas.append(_area)
 
@@ -256,7 +264,6 @@ def compute_fluxes_EWs(file_name, json_file, args):
                     integrated_error.append(0.5 * (err_up-err_low))
 
                     # Compute the median continuum around the fitted line center
-                    center = np.median(MC_uninformed.trace('SHIFT'+str(c))[:])
                     width = np.median(_width)
                     i0 = np.searchsorted(_wl, center-3.*width)
                     i1 = np.searchsorted(_wl, center+3*width)
@@ -298,6 +305,8 @@ def compute_fluxes_EWs(file_name, json_file, args):
                     print "(Sum of components) Flux, error: ", integrated_flux[-1], integrated_error[-1]
                     print "(Sum of components) EW, error: ", EW[-1], EW_err[-1]
 
+
+            sp.specfit.plot_fit(pars=par_values)
 
             integrated_fluxes[key] = integrated_flux
             integrated_errors[key] = integrated_error
