@@ -41,6 +41,14 @@ def main():
     )
 
     parser.add_argument(
+        '--deredden',
+        help="Deredden the spectrum before computing the fluxes, using the dust maps of "\
+             "Schlafly & Finkbeiner (2011) and the R_V=3.1 extinction curve of Fitzpatrick (1999)",
+        action="store_true", 
+        dest="deredden"
+    )
+
+    parser.add_argument(
         '--iterate-fit',
         help="Number of iterations fit continuum - fit lines.",
         action="store", 
