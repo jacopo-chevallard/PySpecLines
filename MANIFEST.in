@@ -1,0 +1,5 @@
+include README.md
+include CHANGELOG.md
+
+recursive-include PySpecLines/files *
+global-exclude *.pyc *.o
