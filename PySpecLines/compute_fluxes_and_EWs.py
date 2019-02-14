@@ -6,7 +6,7 @@ import json
 from astropy.io import fits
 from astropy import constants as const
 from astropy import log
-from dustmaps.sfd import SFDQuery
+import dustmaps.sfd
 import dustmaps.config 
 from astropy.coordinates import SkyCoord
 import astropy.units as units
@@ -68,15 +68,6 @@ def compute_fluxes_EWs(file_name, json_file, args):
     spectrum = hdulist[1].data["flux"]
     error = hdulist[1].data["err"]
 
-    # De-redshift the spectrum
-    redshift = None
-    if 'redshift' in hdulist[1].header:
-        redshift = hdulist[1].header["redshift"]
-        log.info('De-redshifting the spectrum using z = ' + str(redshift))
-        wl /= (1.+redshift)
-        spectrum *= (1.+redshift)
-        error *= (1.+redshift)
-
     # Apply correction for Galactic extinction
     if args.deredden:
         if 'RA' not in hdulist[1].header:
@@ -85,19 +76,41 @@ def compute_fluxes_EWs(file_name, json_file, args):
             raise ValueError("'DEC' keyword (in degrees) must be present in the FITS header!")
 
         package_dir = pyspeclines.__path__[0]
-        #dust_map_path =  pkg_resources.resource_filename('pyspeclines', 'SFD_dust_4096_ngp.fits')
         dust_map_path = os.path.join(os.path.dirname(package_dir), 'PySpecLines', 'files', 'dustmaps')
         dustmaps.config.config['data_dir'] = dust_map_path
-        sfd = SFDQuery()
+
+        # If the dust maps are not present on the local machine, download them !
+        dust_map_ngp = os.path.join(dust_map_path, 'SFD_dust_4096_ngp.fits')
+        dust_map_sgp = os.path.join(dust_map_path, 'SFD_dust_4096_sgp.fits')
+        if not os.path.isfile(dust_map_ngp) or not os.path.isfile(dust_map_sgp):
+            dustmaps.sfd.fetch()
+        
+        # Get the color excerss E(B-V) at the location of the galaxy
+        sfd = dustmaps.sfd.SFDQuery()
         ra, dec = hdulist[1].header['RA'], hdulist[1].header['DEC']
         coord = SkyCoord(ra, dec, frame='icrs', unit=(units.deg, units.deg))
         E_B_V = sfd(coord)
         log.info('Applying a Galactic extinction correction E(B-V) = ' + str(E_B_V))
+
+        # Convert E(B-V) to A_V
         R_V = 3.1
         A_V = E_B_V * R_V
+
+        # Get the Fitzpatrick (1999) extinction curve
         extinction_curve = extinction.fitzpatrick99(wl, -A_V, R_V) 
+
+        # De-redden spectrum and error
         spectrum = extinction.apply(extinction_curve, spectrum)
         error = extinction.apply(extinction_curve, error)
+
+    # De-redshift the spectrum
+    redshift = None
+    if 'redshift' in hdulist[1].header:
+        redshift = hdulist[1].header["redshift"]
+        log.info('De-redshifting the spectrum using z = ' + str(redshift))
+        wl /= (1.+redshift)
+        spectrum *= (1.+redshift)
+        error *= (1.+redshift)
 
     # Cycle across all the lines 
     for key, value in lines.iteritems():
