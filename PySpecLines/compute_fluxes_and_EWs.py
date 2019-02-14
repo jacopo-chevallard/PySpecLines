@@ -1,12 +1,21 @@
 #! /usr/bin/env python
 
 from collections import OrderedDict
+import os
 import json
 from astropy.io import fits
 from astropy import constants as const
+from astropy import log
+from dustmaps.sfd import SFDQuery
+import dustmaps.config 
+from astropy.coordinates import SkyCoord
+import astropy.units as units
 import numpy as np
 import pyspeckit
 import matplotlib.pyplot as plt
+import pkg_resources
+import pyspeclines
+import extinction
 
 SEP = "_"
 FLUX_PREFIX = "F" + SEP
@@ -63,10 +72,32 @@ def compute_fluxes_EWs(file_name, json_file, args):
     redshift = None
     if 'redshift' in hdulist[1].header:
         redshift = hdulist[1].header["redshift"]
-        print "Redshift: ", redshift
+        log.info('De-redshifting the spectrum using z = ' + str(redshift))
         wl /= (1.+redshift)
         spectrum *= (1.+redshift)
         error *= (1.+redshift)
+
+    # Apply correction for Galactic extinction
+    if args.deredden:
+        if 'RA' not in hdulist[1].header:
+            raise ValueError("'RA' keyword (in degrees) must be present in the FITS header!")
+        if 'DEC' not in hdulist[1].header:
+            raise ValueError("'DEC' keyword (in degrees) must be present in the FITS header!")
+
+        package_dir = pyspeclines.__path__[0]
+        #dust_map_path =  pkg_resources.resource_filename('pyspeclines', 'SFD_dust_4096_ngp.fits')
+        dust_map_path = os.path.join(os.path.dirname(package_dir), 'PySpecLines', 'files', 'dustmaps')
+        dustmaps.config.config['data_dir'] = dust_map_path
+        sfd = SFDQuery()
+        ra, dec = hdulist[1].header['RA'], hdulist[1].header['DEC']
+        coord = SkyCoord(ra, dec, frame='icrs', unit=(units.deg, units.deg))
+        E_B_V = sfd(coord)
+        log.info('Applying a Galactic extinction correction E(B-V) = ' + str(E_B_V))
+        R_V = 3.1
+        A_V = E_B_V * R_V
+        extinction_curve = extinction.fitzpatrick99(wl, -A_V, R_V) 
+        spectrum = extinction.apply(extinction_curve, spectrum)
+        error = extinction.apply(extinction_curve, error)
 
     # Cycle across all the lines 
     for key, value in lines.iteritems():
