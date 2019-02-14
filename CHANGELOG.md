@@ -1,3 +1,9 @@
+## 0.2.1 (February 14, 2019)
+  - Add possibility to choose verbose level
+  - De-redden the spectrum, only then de-redshift it; download the dust maps the first time the de-reddening option is used
+  - Removed dust maps from the repo, as the files were too large to allow uploading package to PyPI. The maps are downlaoded the first time that the de-reddening option is used
+  - Added more extended explanations to README
+
 ## 0.2.0 (February 14, 2019)
   - Added required dependencies to correct for Galactic extinction
   - Added '--deredden' option
