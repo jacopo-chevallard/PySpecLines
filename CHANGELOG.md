@@ -1,3 +1,10 @@
+## 0.2.0 (February 14, 2019)
+  - Added required dependencies to correct for Galactic extinction
+  - Added '--deredden' option
+  - Added de-reddenning of spectrum before computing fluxes/EWs
+  - Added FITS file containing Galactic extinction maps
+  - Adding MANIFEST to install additional files required by the package
+
 ## 0.1.6 (February 13, 2019)
   - You're now correctly plotting the Gaussian fit obtained with PyMC, when PyMC is used (using the posterior median of the parameters)
 
