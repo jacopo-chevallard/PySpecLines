@@ -41,6 +41,16 @@ def main():
     )
 
     parser.add_argument(
+        '--verbose',
+        help="Choose the verbose level",
+        action="store",
+        type=str,
+        dest="verbose",
+        default="WARNING",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"]
+    )
+
+    parser.add_argument(
         '--deredden',
         help="Deredden the spectrum before computing the fluxes, using the dust maps of "\
              "Schlafly & Finkbeiner (2011) and the R_V=3.1 extinction curve of Fitzpatrick (1999)",
@@ -142,9 +152,6 @@ def main():
         default=1
     )
 
-
-    log.setLevel('WARNING')
-
     # Add package version
     parser.add_argument('-v', '--version', 
             action='version', 
@@ -153,6 +160,8 @@ def main():
 
     # Get parsed arguments
     args = parser.parse_args()    
+
+    log.setLevel(args.verbose)
 
     # Create "pool" of processes
     if args.n_proc > 1:
