@@ -37,7 +37,7 @@ pip install pyspeclines --upgrade
 - ``RA``, right ascension of the object in ``deg``, in the ``ICRS`` frame, used to correct for Galactic absorption
 - ``DEC``, declination of the object in ``deg``, in the ``ICRS`` frame, used to correct for Galactic absorption
 
-When both keywords ``RA`` and ``DEC`` are present, ``PySpecLines`` can de-redden the spectrum (passing the option ``-deredden``) using the Galactic dust map of Schlegel, Finkbeiner & Davis (1998) recalibrated by Schlafly & Finkbeiner (2011), and the ``R_V=3.1`` extinction curve of Fitzpatrick (1999).  
+When both keywords ``RA`` and ``DEC`` are present, ``PySpecLines`` can de-redden the spectrum (passing the option ``--deredden``) using the Galactic dust map of Schlegel, Finkbeiner & Davis (1998) recalibrated by Schlafly & Finkbeiner (2011), and the ``R_V=3.1`` extinction curve of Fitzpatrick (1999).  
 
 ### JSON configuration file
 
@@ -75,7 +75,7 @@ Below we report some simple examples:
     }
   ```
   - wrt to the example above, the ``key`` is composed of two labels separated by an underscore ``_``
-  - ``exclude`` allows to define regions (``[exclude[0], exclude[1]], [exclude[2], exclude[3]]``) excluded from the continuum fitting 
+  - ``exclude`` allows to define regions (``[exclude[0], exclude[1]], [exclude[2], exclude[3], ..., [exclude[2*i], exclude[2*i+1]]``) excluded from the continuum fitting 
   
 - multiple kinematic components
   ```json
