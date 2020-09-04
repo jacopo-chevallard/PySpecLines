@@ -35,6 +35,7 @@ setup(
     version=verstr,
     description='Package to compute integrated line fluxes and equivalent widths from galaxy spectra',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     url='https://github.com/jacopo-chevallard/PySpecLines',
     author='Jacopo Chevallard',
     author_email='jacopo.chevallard@mailfence.com',
