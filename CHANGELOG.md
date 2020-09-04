@@ -1,3 +1,8 @@
+## 0.2.2 (September 04, 2020)
+  - Enabling markdown support in PyPi, see https://stackoverflow.com/a/26737258
+  - Merge branch 'master' of https://github.com/jacopo-chevallard/PySpecLines
+  - Update README.md
+
 ## 0.2.1 (February 14, 2019)
   - Add possibility to choose verbose level
   - De-redden the spectrum, only then de-redshift it; download the dust maps the first time the de-reddening option is used
